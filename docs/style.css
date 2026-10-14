@@ -412,3 +412,7 @@ footer {
     scroll-behavior: auto;
   }
 }
+
+.diagnostics,.research{padding:42px 0;border-bottom:1px solid var(--rule)}.diagnostic-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}.diagnostic-grid article{background:white;border:1px solid var(--rule);border-radius:12px;padding:20px}.diagnostic-grid p,.research p{font-size:14px;color:var(--muted)}h3{font-size:18px;font-weight:600}.research-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}.verdict{margin-top:22px;padding:22px;border-left:4px solid var(--teal);background:#e7f0f3}.verdict a{font-size:13px}@media(max-width:650px){.diagnostic-grid,.research-grid{grid-template-columns:1fr;gap:14px}.diagnostics,.research{padding:28px 0}.diagnostic-grid article{padding:14px}}
+
+@media(max-width:900px){.diagnostic-grid,.research-grid{grid-template-columns:1fr}}

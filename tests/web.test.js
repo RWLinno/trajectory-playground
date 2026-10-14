@@ -32,3 +32,16 @@ test("displayed metrics agree with Python evaluation for all presets", () => {
       );
     }
 });
+
+import { bothRoutes, classify } from '../docs/diagnostics.js';
+test('finite bank route coverage matches exhaustive enumeration',()=>{
+ const labels=[1,1,-1,0];
+ for(let k=1;k<=4;k++){
+  let all=0,both=0;
+  for(let mask=0;mask<16;mask++){const subset=labels.filter((_,i)=>mask&(1<<i));if(subset.length!==k)continue;all++;if(subset.includes(1)&&subset.includes(-1))both++;}
+  assert.ok(Math.abs(bothRoutes(2,1,4,k)-both/all)<1e-12);
+ }
+ assert.equal(bothRoutes(0,0,64,64),0);
+ assert.equal(bothRoutes(32,32,64,64),1);
+ assert.equal(classify([0,.5,-.5],[.2,0,0]).filter(r=>r.valid).length,2);
+});

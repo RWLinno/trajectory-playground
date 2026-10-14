@@ -98,3 +98,8 @@ This repository is a fresh, minimal teaching implementation, extracted conceptua
 - [Diffusion Policy](https://diffusion-policy.cs.columbia.edu/), Chi et al., 2023 — a substantially richer robotics setting; this demo is **not** a reproduction.
 
 MIT licensed. Code, synthetic samples, trained weights and visual assets in this repository are released under the same license. Contributions that keep the example small, correct, and easy to understand are welcome.
+
+
+## Research context and diagnostics · 2026-10-14
+
+[中文研究评估与低成本路线](RESEARCH_REPORT.zh-CN.md) covers verified evidence, diffusion / flow-matching / VLA context, practical next steps, and stopping criteria. The live report now includes distribution diagnostics; research references are context, not implemented baselines.

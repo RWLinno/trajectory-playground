@@ -35,3 +35,8 @@ node --test tests/web.test.js
 需要核对的指标文件：`artifacts/evaluation.json`（独立条件逐项评估与汇总）、`docs/assets/samples.json`（网页所有样本与场景指标）。`artifacts/models.pt` 为权重；校验脚本从权重重新生成全部样本和评估结果。环境和方法细节见英文 README。
 
 MIT 协议。欢迎增加小而清楚的对比，例如混合密度网络、非对称模态权重和固定采样预算下的有效覆盖率。
+
+
+## Research context and diagnostics · 2026-10-14
+
+[中文研究评估与低成本路线](RESEARCH_REPORT.zh-CN.md) covers verified evidence, diffusion / flow-matching / VLA context, practical next steps, and stopping criteria. The live report now includes distribution diagnostics; research references are context, not implemented baselines.

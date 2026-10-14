@@ -1,4 +1,5 @@
 import { trajectory, evaluate } from "./geometry.js";
+import { diagnostics } from "./diagnostics.js?v=0.2.0";
 const $ = (id) => document.getElementById(id);
 const NS = "http://www.w3.org/2000/svg";
 const colors = { mlp: "#c66b53", diffusion: "#0d6675", reference: "#92a2b4" };
@@ -82,6 +83,7 @@ function draw() {
   $("play").textContent = "Replay motion ▷";
   const cScene =
     data.scenes[Number($("radius").value) * 3 + Number($("scene").value)];
+  diagnostics(cScene);
   const c = cScene.condition;
   const count = Number($("count").value);
   $("countLabel").value = count;
