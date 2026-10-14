@@ -1,1 +1,8 @@
-{"name":"trajectory-playground","private":true,"type":"module","scripts":{"test":"node --test tests/web.test.js"}}
+{
+  "name": "trajectory-playground",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/web.test.js"
+  }
+}

@@ -1,10 +1,197 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Why an average path can hit an obstacle: explore actual MLP and conditional diffusion samples in a tiny, reproducible experiment."><title>Trajectory Playground — One goal, two ways around</title><link rel="stylesheet" href="style.css"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' rx='18' fill='%230d6675'/%3E%3Cpath d='M10 45 Q40 -10 70 45 M10 45 Q40 85 70 45' fill='none' stroke='%23fff' stroke-width='5'/%3E%3Ccircle cx='40' cy='45' r='9' fill='%23efba67'/%3E%3C/svg%3E"></head>
-<body><header><a class="brand" href="./"><span class="brand-icon">↝</span> Trajectory Playground</a><nav><a href="#how">How it works</a><a href="https://github.com/RWLinno/trajectory-playground">Source ↗</a></nav></header>
-<main><section class="intro"><div><p class="eyebrow">A SMALL EXPERIMENT IN GENERATIVE MOTION</p><h1>One goal.<br>Two ways around.</h1></div><div class="intro-copy"><p>Two safe routes can average into one bad decision. Explore what regression and diffusion learn from the same demonstrations.</p><span class="tag">Real model samples · No installation</span></div></section>
-<section class="lab" aria-label="Interactive trajectory experiment"><div class="controlbar"><label>Obstacle size<select id="radius"><option value="0">Small · 0.18</option><option value="1" selected>Medium · 0.25</option><option value="2">Large · 0.32</option></select></label><label>Start / goal preset<select id="scene"><option value="0">Downhill · obstacle left</option><option value="1" selected>Level · obstacle center</option><option value="2">Uphill · obstacle right</option></select></label><label class="sample-control">Paths <output id="countLabel">24</output><input id="count" type="range" min="8" max="64" step="8" value="24"></label><button id="resample">Resample ↻</button><button id="play" class="secondary">Replay motion ▷</button></div>
-<div class="compare"><article><div class="panel-title"><div><span class="model-label">DETERMINISTIC REGRESSION</span><h2>MLP <span class="line-key mlp-key"></span></h2></div><span class="method-note">Learns the average</span></div><svg id="mlp" viewBox="0 0 560 420" role="img" aria-label="MLP paths through a circular obstacle"></svg><div id="mlpMetrics" class="metrics"></div></article><article><div class="panel-title"><div><span class="model-label">CONDITIONAL DIFFUSION</span><h2>Diffusion <span class="line-key diffusion-key"></span></h2></div><span class="method-note">Samples alternatives</span></div><svg id="diffusion" viewBox="0 0 560 420" role="img" aria-label="Diffusion paths around a circular obstacle"></svg><div id="diffusionMetrics" class="metrics"></div></article></div>
-<div class="lab-footer"><label><input id="reference" type="checkbox"> Show reference demonstrations</label><span id="status" role="status">Loading saved model samples…</span></div></section>
-<section class="reading"><div class="finding"><p class="eyebrow">WHAT TO NOTICE</p><h2>A mean is not always<br>a useful answer.</h2><p>The training set contains equally many routes above and below the obstacle. Squared-error regression is rewarded for predicting their average—even when that average collides.</p></div><div class="explanation"><p>Diffusion learns a distribution over a path’s bend. Sampling can recover both routes instead of merging them. A spread of lines is not enough: only collision-free paths count toward valid route coverage.</p><p class="subtle">Switch the scene, draw another subset, and compare valid paths with route coverage. Failed samples are kept in the display.</p><a href="assets/samples.json" download>Download the displayed sample bank ↓</a></div></section>
-<section id="how" class="how"><div><p class="eyebrow">UNDER THE HOOD</p><h2>Small enough to understand.<br>Honest enough to reproduce.</h2></div><div class="details"><details open><summary>What is learned?</summary><p>Each path is a straight start-to-goal line plus a sine-shaped bend. The networks predict or sample <strong>one bend coefficient</strong>, conditioned on obstacle radius, horizontal position and endpoint slope. The diffusion model uses 64 denoising steps. This deliberately restricted family makes the averaging problem visible.</p></details><details><summary>Are these live model predictions?</summary><p>No. The browser displays 64 actual, unfiltered samples per model for each of nine saved scenes, generated after training. Resample selects a new subset from that bank. Moving between presets selects another saved condition. There is no server or GPU behind the page.</p></details><details><summary>What does “valid” mean?</summary><p>A point path stays in the square workspace and avoids the circle. We check entire line segments, not just waypoints. Valid routes counts whether at least one valid sample passes above and below. These are geometric checks, not guarantees about a robot’s joints, dynamics or safety.</p></details><details><summary>What does this experiment not prove?</summary><p>It is a single-training-seed teaching experiment with synthetic, symmetric demonstrations. Both routes are built into the path family. It does not establish diffusion’s superiority over other generative models, solve arbitrary maps, or measure real robot performance. A two-component mixture or simple randomized planner could also solve this example.</p></details><div id="experiment" class="experiment"></div></div></section>
-</main><footer><span>Built for curiosity. Not for controlling a robot.</span><a href="https://github.com/RWLinno/trajectory-playground">Code, weights & reproducibility ↗</a></footer><script type="module" src="app.js"></script></body></html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Why an average path can hit an obstacle: explore actual MLP and conditional diffusion samples in a tiny, reproducible experiment."
+    />
+    <title>Trajectory Playground — One goal, two ways around</title>
+    <link rel="stylesheet" href="style.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' rx='18' fill='%230d6675'/%3E%3Cpath d='M10 45 Q40 -10 70 45 M10 45 Q40 85 70 45' fill='none' stroke='%23fff' stroke-width='5'/%3E%3Ccircle cx='40' cy='45' r='9' fill='%23efba67'/%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <header>
+      <a class="brand" href="./"
+        ><span class="brand-icon">↝</span> Trajectory Playground</a
+      >
+      <nav>
+        <a href="#how">How it works</a
+        ><a href="https://github.com/RWLinno/trajectory-playground"
+          >Source ↗</a
+        >
+      </nav>
+    </header>
+    <main>
+      <section class="intro">
+        <div>
+          <p class="eyebrow">A SMALL EXPERIMENT IN GENERATIVE MOTION</p>
+          <h1>One goal.<br />Two ways around.</h1>
+        </div>
+        <div class="intro-copy">
+          <p>
+            Two safe routes can average into one bad decision. Explore what
+            regression and diffusion learn from the same demonstrations.
+          </p>
+          <span class="tag">Real model samples · No installation</span>
+        </div>
+      </section>
+      <section class="lab" aria-label="Interactive trajectory experiment">
+        <div class="controlbar">
+          <label
+            >Obstacle size<select id="radius" disabled>
+              <option value="0">Small · 0.18</option>
+              <option value="1" selected>Medium · 0.25</option>
+              <option value="2">Large · 0.32</option>
+            </select></label
+          ><label
+            >Start / goal preset<select id="scene" disabled>
+              <option value="0">Downhill · obstacle left</option>
+              <option value="1" selected>Level · obstacle center</option>
+              <option value="2">Uphill · obstacle right</option>
+            </select></label
+          ><label class="sample-control"
+            >Paths <output id="countLabel">24</output
+            ><input
+              id="count"
+              disabled
+              type="range"
+              min="8"
+              max="64"
+              step="8"
+              value="24" /></label
+          ><button id="resample" disabled>Resample ↻</button
+          ><button id="play" disabled class="secondary">Replay motion ▷</button>
+        </div>
+        <div class="compare">
+          <article>
+            <div class="panel-title">
+              <div>
+                <span class="model-label">DETERMINISTIC REGRESSION</span>
+                <h2>MLP <span class="line-key mlp-key"></span></h2>
+              </div>
+              <span class="method-note">Learns the average</span>
+            </div>
+            <svg
+              id="mlp"
+              viewBox="0 0 560 420"
+              role="img"
+              aria-label="MLP paths through a circular obstacle"
+            ></svg>
+            <div id="mlpMetrics" class="metrics"></div>
+          </article>
+          <article>
+            <div class="panel-title">
+              <div>
+                <span class="model-label">CONDITIONAL DIFFUSION</span>
+                <h2>Diffusion <span class="line-key diffusion-key"></span></h2>
+              </div>
+              <span class="method-note">Samples alternatives</span>
+            </div>
+            <svg
+              id="diffusion"
+              viewBox="0 0 560 420"
+              role="img"
+              aria-label="Diffusion paths around a circular obstacle"
+            ></svg>
+            <div id="diffusionMetrics" class="metrics"></div>
+          </article>
+        </div>
+        <div class="lab-footer">
+          <label
+            ><input id="reference" disabled type="checkbox" /> Show reference
+            demonstrations</label
+          ><span id="status" role="status">Loading saved model samples…</span>
+        </div>
+      </section>
+      <section class="reading">
+        <div class="finding">
+          <p class="eyebrow">WHAT TO NOTICE</p>
+          <h2>A mean is not always<br />a useful answer.</h2>
+          <p>
+            The training set contains equally many routes above and below the
+            obstacle. Squared-error regression is rewarded for predicting their
+            average—even when that average collides.
+          </p>
+        </div>
+        <div class="explanation">
+          <p>
+            Diffusion learns a distribution over a path’s bend. Sampling can
+            recover both routes instead of merging them. A spread of lines is
+            not enough: only collision-free paths count toward valid route
+            coverage.
+          </p>
+          <p class="subtle">
+            Switch the scene, draw another subset, and compare valid paths with
+            route coverage. Failed samples are kept in the display.
+          </p>
+          <a href="assets/samples.json" download
+            >Download the displayed sample bank ↓</a
+          >
+        </div>
+      </section>
+      <section id="how" class="how">
+        <div>
+          <p class="eyebrow">UNDER THE HOOD</p>
+          <h2>Small enough to understand.<br />Honest enough to reproduce.</h2>
+        </div>
+        <div class="details">
+          <details open>
+            <summary>What is learned?</summary>
+            <p>
+              Each path is a straight start-to-goal line plus a sine-shaped
+              bend. The networks predict or sample
+              <strong>one bend coefficient</strong>, conditioned on obstacle
+              radius, horizontal position and endpoint slope. The diffusion
+              model uses 64 denoising steps. This deliberately restricted family
+              makes the averaging problem visible.
+            </p>
+          </details>
+          <details>
+            <summary>Are these live model predictions?</summary>
+            <p>
+              No. The browser displays 64 actual, unfiltered samples per model
+              for each of nine saved scenes, generated after training. Resample
+              selects a new subset from that bank. Moving between presets
+              selects another saved condition. There is no server or GPU behind
+              the page.
+            </p>
+          </details>
+          <details>
+            <summary>What does “valid” mean?</summary>
+            <p>
+              A point path stays in the square workspace and avoids the circle.
+              We check entire line segments, not just waypoints. Valid routes
+              counts whether at least one valid sample passes above and below.
+              These are geometric checks, not guarantees about a robot’s joints,
+              dynamics or safety.
+            </p>
+          </details>
+          <details>
+            <summary>What does this experiment not prove?</summary>
+            <p>
+              It is a single-training-seed teaching experiment with synthetic,
+              symmetric demonstrations. Both routes are built into the path
+              family. It does not establish diffusion’s superiority over other
+              generative models, solve arbitrary maps, or measure real robot
+              performance. A two-component mixture or simple randomized planner
+              could also solve this example.
+            </p>
+          </details>
+          <div id="experiment" class="experiment"></div>
+        </div>
+      </section>
+    </main>
+    <footer>
+      <span>Built for curiosity. Not for controlling a robot.</span
+      ><a href="https://github.com/RWLinno/trajectory-playground"
+        >Code, weights & reproducibility ↗</a
+      >
+    </footer>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

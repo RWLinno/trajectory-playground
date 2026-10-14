@@ -32,7 +32,11 @@ for i,c in enumerate([s['condition'] for s in bank['scenes']]+list(heldout)):
         else:
             actual=metrics(paths(amplitudes,c),c)
             expected=report['per_condition'][name][i-9]
-            for key,value in actual.items(): np.testing.assert_allclose(value,expected[key],atol=2e-5,rtol=0)
+            for key,value in actual.items():
+                # CPU kernels differ between ARM/macOS and x86/Linux. Discrete
+                # collision and coverage outcomes must still match exactly.
+                tolerance = 1e-4 if key in ['mean_length','min_clearance'] else 0
+                np.testing.assert_allclose(value,expected[key],atol=tolerance,rtol=0,err_msg=f'{name} condition {i-9} metric {key}')
             rows[name].append(actual)
 for name,expected in report['summary'].items():
     for key,value in expected.items(): np.testing.assert_allclose(np.mean([r[key] for r in rows[name]]),value,atol=2e-5,rtol=0)

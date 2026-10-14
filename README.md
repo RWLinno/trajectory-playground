@@ -83,7 +83,7 @@ These figures describe **this constructed teaching example only**. There are no 
 | `tests/test_geometry.py` | Collision, endpoint, mode coverage and reference-validity tests |
 | `tests/web.test.js` | Segment collision and JavaScript/Python metric agreement on all published presets |
 
-The browser reconstructs paths from rounded coefficients; its metric agreement test allows 1e-5 path-length error. Replay verification allows small floating-point differences across runtimes. Exact training reproduction can vary with PyTorch/platform versions.
+The browser reconstructs paths from rounded coefficients; its metric agreement test allows 1e-5 path-length error. Replay verification allows 2e-5 coefficient error and 1e-4 continuous-geometry error across CPU kernels; per-condition collision rates, valid rates and coverage must match exactly. Exact training reproduction can vary with PyTorch/platform versions.
 
 ## Ideas to explore
 

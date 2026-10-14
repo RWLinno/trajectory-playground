@@ -1,15 +1,211 @@
-import { trajectory, evaluate } from './geometry.js';
-const $ = id => document.getElementById(id);
-const NS = 'http://www.w3.org/2000/svg';
-const colors = { mlp: '#c66b53', diffusion: '#0d6675', reference: '#92a2b4' };
-let data, frame, selectedIndices = Array.from({length:64},(_,i)=>i), current = {};
-const xy = ([x,y]) => [280+x*180, 210-y*180];
-function node(tag, attrs, text='') {const n=document.createElementNS(NS,tag); for(const [k,v] of Object.entries(attrs)) n.setAttribute(k,v); n.textContent=text;return n;}
-function shuffled(){const values=Array.from({length:64},(_,i)=>i);for(let i=63;i>0;i--){const j=Math.floor(Math.random()*(i+1));[values[i],values[j]]=[values[j],values[i]];}return values;}
-function base(svg, c){svg.replaceChildren();for(let v=-1;v<=1.001;v+=.2){const [x,y]=xy([v,v]);svg.append(node('line',{x1:x,y1:30,x2:x,y2:390,stroke:'#e9eff3'}),node('line',{x1:100,y1:y,x2:460,y2:y,stroke:'#e9eff3'}));}svg.append(node('rect',{x:100,y:30,width:360,height:360,fill:'none',stroke:'#cbd9e1'}));const [cx,cy]=xy([c[1],c[2]*c[1]]);svg.append(node('circle',{cx,cy,r:c[0]*180,fill:'#efba674d',stroke:'#d19a42','stroke-width':1.5}),node('text',{x:cx,y:cy+4,'text-anchor':'middle',fill:'#805c24','font-size':10},'OBSTACLE'));}
-function drawPath(svg,path,color,opacity,width=1.3,dash=''){const d=path.map((p,i)=>`${i?'L':'M'}${xy(p).join(',')}`).join(' ');svg.append(node('path',{d,fill:'none',stroke:color,'stroke-width':width,opacity,'stroke-dasharray':dash}));}
-function draw(){if(!data)return;cancelAnimationFrame(frame);$('play').textContent='Replay motion ▷';const cScene=data.scenes[Number($('radius').value)*3+Number($('scene').value)];const c=cScene.condition;const count=Number($('count').value);$('countLabel').value=count;current={};for(const model of ['mlp','diffusion']){const svg=$(model);base(svg,c);if($('reference').checked)cScene.models.reference.amplitudes.slice(0,12).forEach(a=>drawPath(svg,trajectory(a,c),colors.reference,.45,1,'4 4'));const amplitudes=selectedIndices.slice(0,count).map(i=>cScene.models[model].amplitudes[i]);const paths=amplitudes.map(a=>trajectory(a,c));current[model]=paths;paths.forEach(p=>drawPath(svg,p,colors[model],model==='mlp'?.65:.42,model==='mlp'?1.8:1.3));for(const [p,label] of [[paths[0][0],'START'],[paths[0].at(-1),'GOAL']]){const [x,y]=xy(p);svg.append(node('circle',{cx:x,cy:y,r:5,fill:'#172d39',stroke:'white','stroke-width':2}),node('text',{x,y:y+23,'text-anchor':'middle',fill:'#526b79','font-size':9},label));}const m=evaluate(paths,c);$(model+'Metrics').innerHTML=`<div class="metric"><strong>${Math.round(m.valid_rate*100)}%</strong><span>Valid paths</span></div><div class="metric"><strong>${m.valid_modes} / 2</strong><span>Valid routes</span></div><div class="metric"><strong>${m.mean_length.toFixed(2)}</strong><span>Mean length</span></div>`;} $('status').textContent=`${count} of 64 saved samples · scene ${cScene.id+1}/9 · geometric checks`;}
-for(const id of ['radius','scene','count','reference'])$(id).addEventListener('input',draw);
-$('resample').addEventListener('click',()=>{selectedIndices=shuffled();draw();});
-$('play').addEventListener('click',()=>{draw();if(matchMedia('(prefers-reduced-motion: reduce)').matches){$('status').textContent='Motion is disabled by your reduced-motion preference.';return;}const dots=[];for(const model of ['mlp','diffusion'])for(const p of current[model].slice(0,8)){const dot=node('circle',{r:4,fill:colors[model],stroke:'white','stroke-width':1});$(model).append(dot);dots.push([dot,p]);}const start=performance.now();function step(now){const fraction=Math.min(1,(now-start)/2200);const i=Math.min(64,Math.floor(fraction*64));dots.forEach(([dot,p])=>{const [x,y]=xy(p[i]);dot.setAttribute('cx',x);dot.setAttribute('cy',y);});if(fraction<1)frame=requestAnimationFrame(step);else dots.forEach(([dot])=>dot.remove());}frame=requestAnimationFrame(step);});
-fetch('assets/samples.json').then(r=>{if(!r.ok)throw Error('sample bank unavailable');return r.json();}).then(d=>{data=d;const m=d.metadata;$('experiment').textContent=`Training: ${m.training_examples.toLocaleString()} demonstrations · ${m.training_steps.toLocaleString()} updates · seed ${m.seed}. Separate evaluation: ${m.test_conditions} conditions × ${m.samples_per_condition} samples. All weights and per-condition results are in the repository.`;draw();}).catch(()=>{$('status').textContent='Samples could not load. Reload the page, or serve docs/ with a local HTTP server.';for(const id of ['play','resample','radius','scene','count'])$(id).disabled=true;});
+import { trajectory, evaluate } from "./geometry.js";
+const $ = (id) => document.getElementById(id);
+const NS = "http://www.w3.org/2000/svg";
+const colors = { mlp: "#c66b53", diffusion: "#0d6675", reference: "#92a2b4" };
+let data,
+  frame,
+  selectedIndices = Array.from({ length: 64 }, (_, i) => i),
+  current = {};
+const xy = ([x, y]) => [280 + x * 180, 210 - y * 180];
+function node(tag, attrs, text = "") {
+  const n = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  n.textContent = text;
+  return n;
+}
+function shuffled() {
+  const values = Array.from({ length: 64 }, (_, i) => i);
+  for (let i = 63; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [values[i], values[j]] = [values[j], values[i]];
+  }
+  return values;
+}
+function base(svg, c) {
+  svg.replaceChildren();
+  for (let v = -1; v <= 1.001; v += 0.2) {
+    const [x, y] = xy([v, v]);
+    svg.append(
+      node("line", { x1: x, y1: 30, x2: x, y2: 390, stroke: "#e9eff3" }),
+      node("line", { x1: 100, y1: y, x2: 460, y2: y, stroke: "#e9eff3" }),
+    );
+  }
+  svg.append(
+    node("rect", {
+      x: 100,
+      y: 30,
+      width: 360,
+      height: 360,
+      fill: "none",
+      stroke: "#cbd9e1",
+    }),
+  );
+  const [cx, cy] = xy([c[1], c[2] * c[1]]);
+  svg.append(
+    node("circle", {
+      cx,
+      cy,
+      r: c[0] * 180,
+      fill: "#efba674d",
+      stroke: "#d19a42",
+      "stroke-width": 1.5,
+    }),
+    node(
+      "text",
+      {
+        x: cx,
+        y: cy + 4,
+        "text-anchor": "middle",
+        fill: "#805c24",
+        "font-size": 10,
+      },
+      "OBSTACLE",
+    ),
+  );
+}
+function drawPath(svg, path, color, opacity, width = 1.3, dash = "") {
+  const d = path.map((p, i) => `${i ? "L" : "M"}${xy(p).join(",")}`).join(" ");
+  svg.append(
+    node("path", {
+      d,
+      fill: "none",
+      stroke: color,
+      "stroke-width": width,
+      opacity,
+      "stroke-dasharray": dash,
+    }),
+  );
+}
+function draw() {
+  if (!data) return;
+  cancelAnimationFrame(frame);
+  $("play").textContent = "Replay motion ▷";
+  const cScene =
+    data.scenes[Number($("radius").value) * 3 + Number($("scene").value)];
+  const c = cScene.condition;
+  const count = Number($("count").value);
+  $("countLabel").value = count;
+  current = {};
+  for (const model of ["mlp", "diffusion"]) {
+    const svg = $(model);
+    base(svg, c);
+    if ($("reference").checked)
+      cScene.models.reference.amplitudes
+        .slice(0, 12)
+        .forEach((a) =>
+          drawPath(svg, trajectory(a, c), colors.reference, 0.45, 1, "4 4"),
+        );
+    const amplitudes = selectedIndices
+      .slice(0, count)
+      .map((i) => cScene.models[model].amplitudes[i]);
+    const paths = amplitudes.map((a) => trajectory(a, c));
+    current[model] = paths;
+    paths.forEach((p) =>
+      drawPath(
+        svg,
+        p,
+        colors[model],
+        model === "mlp" ? 0.65 : 0.42,
+        model === "mlp" ? 1.8 : 1.3,
+      ),
+    );
+    for (const [p, label] of [
+      [paths[0][0], "START"],
+      [paths[0].at(-1), "GOAL"],
+    ]) {
+      const [x, y] = xy(p);
+      svg.append(
+        node("circle", {
+          cx: x,
+          cy: y,
+          r: 5,
+          fill: "#172d39",
+          stroke: "white",
+          "stroke-width": 2,
+        }),
+        node(
+          "text",
+          {
+            x,
+            y: y + 23,
+            "text-anchor": "middle",
+            fill: "#526b79",
+            "font-size": 9,
+          },
+          label,
+        ),
+      );
+    }
+    const m = evaluate(paths, c);
+    $(model + "Metrics").innerHTML =
+      `<div class="metric"><strong>${Math.round(m.valid_rate * 100)}%</strong><span>Valid paths</span></div><div class="metric"><strong>${m.valid_modes} / 2</strong><span>Valid routes</span></div><div class="metric"><strong>${m.mean_length.toFixed(2)}</strong><span>Mean length</span></div>`;
+  }
+  $("status").textContent =
+    `${count} of 64 saved samples · scene ${cScene.id + 1}/9 · geometric checks`;
+}
+for (const id of ["radius", "scene", "count", "reference"])
+  $(id).addEventListener("input", draw);
+$("resample").addEventListener("click", () => {
+  selectedIndices = shuffled();
+  draw();
+});
+$("play").addEventListener("click", () => {
+  draw();
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    $("status").textContent =
+      "Motion is disabled by your reduced-motion preference.";
+    return;
+  }
+  const dots = [];
+  for (const model of ["mlp", "diffusion"])
+    for (const p of current[model].slice(0, 8)) {
+      const dot = node("circle", {
+        r: 4,
+        fill: colors[model],
+        stroke: "white",
+        "stroke-width": 1,
+      });
+      $(model).append(dot);
+      dots.push([dot, p]);
+    }
+  const start = performance.now();
+  function step(now) {
+    const fraction = Math.min(1, (now - start) / 2200);
+    const i = Math.min(64, Math.floor(fraction * 64));
+    dots.forEach(([dot, p]) => {
+      const [x, y] = xy(p[i]);
+      dot.setAttribute("cx", x);
+      dot.setAttribute("cy", y);
+    });
+    if (fraction < 1) frame = requestAnimationFrame(step);
+    else dots.forEach(([dot]) => dot.remove());
+  }
+  frame = requestAnimationFrame(step);
+});
+fetch("assets/samples.json")
+  .then((r) => {
+    if (!r.ok) throw Error("sample bank unavailable");
+    return r.json();
+  })
+  .then((d) => {
+    data = d;
+    for (const id of [
+      "play",
+      "resample",
+      "radius",
+      "scene",
+      "count",
+      "reference",
+    ])
+      $(id).disabled = false;
+    const m = d.metadata;
+    $("experiment").textContent =
+      `Training: ${m.training_examples.toLocaleString()} demonstrations · ${m.training_steps.toLocaleString()} updates · seed ${m.seed}. Separate evaluation: ${m.test_conditions} conditions × ${m.samples_per_condition} samples. All weights and per-condition results are in the repository.`;
+    draw();
+  })
+  .catch(() => {
+    $("status").textContent =
+      "Samples could not load. Reload the page, or serve docs/ with a local HTTP server.";
+    for (const id of ["play", "resample", "radius", "scene", "count"])
+      $(id).disabled = true;
+  });
