@@ -1,0 +1,9 @@
+test_noise_is_not_valid_diversity (test_geometry.GeometryTests.test_noise_is_not_valid_diversity) ... ok
+test_reference_distribution_is_feasible (test_geometry.GeometryTests.test_reference_distribution_is_feasible) ... ok
+test_segment_interior_collision (test_geometry.GeometryTests.test_segment_interior_collision) ... ok
+test_two_valid_modes_and_endpoints (test_geometry.GeometryTests.test_two_valid_modes_and_endpoints) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.038s
+
+OK

@@ -1,0 +1,1 @@
+PASS: hashes, 9 complete sample banks, 128 held-out conditions, all three methods, summaries.

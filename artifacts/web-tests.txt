@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: segment collision is detected between clear endpoints
+ok 1 - segment collision is detected between clear endpoints
+  ---
+  duration_ms: 0.340083
+  type: 'test'
+  ...
+# Subtest: displayed metrics agree with Python evaluation for all presets
+ok 2 - displayed metrics agree with Python evaluation for all presets
+  ---
+  duration_ms: 32.179333
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 83.737791
