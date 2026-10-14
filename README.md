@@ -56,7 +56,7 @@ Both networks condition on the circle radius, its horizontal position, and the e
 
 - **Data:** 4,096 sampled conditions, two symmetric demonstrations per condition, 8,192 training examples. Radius ∈ [0.16,0.32], horizontal position ∈ [-0.18,0.18], slope ∈ [-0.2,0.2].
 - **MLP:** squared-error coefficient regression. Both members of a demonstration pair appear in every training batch. Under this intentionally symmetric distribution, the optimal conditional mean is zero.
-- **Diffusion:** coefficient-space DDPM with a 64-step cosine schedule and a small noise-prediction MLP. No rejection sampling, obstacle projection or sample filtering.
+- **Diffusion:** coefficient-space DDPM with a 64-step cosine schedule and a small noise-prediction MLP. Training uses float32; saved-sample inference uses float64 to reduce CPU-dependent numerical drift. No rejection sampling, obstacle projection or sample filtering.
 - **Evaluation:** 128 independently drawn, in-distribution conditions, 64 samples each, distinct training and evaluation random streams. The nine UI presets are additional cases, not the evaluation set.
 - **Validity:** every segment avoids the circle and the whole polyline stays within [-1,1]². This treats the moving object as a point. Endpoints are guaranteed by the path parameterization, not learned.
 - **Valid routes:** the number of sides (above/below) represented by at least one valid sample, from zero to two. It is a coarse coverage statistic, not a calibrated distribution metric.
@@ -66,7 +66,7 @@ Committed single-seed run (training seed 42):
 | Method | Valid paths ↑ | Collision rate ↓ | Mean valid routes / 2 ↑ |
 |---|---:|---:|---:|
 | MLP regression | 0.00% | 100.00% | 0.00 |
-| Conditional diffusion | 98.14% | 1.86% | 2.00 |
+| Conditional diffusion | 98.33% | 1.67% | 2.00 |
 | Synthetic reference generator | 100.00% | 0.00% | 2.00 |
 
 These figures describe **this constructed teaching example only**. There are no multi-seed confidence intervals, arbitrary obstacle maps, physics, learned IK, joint limits, or real-robot claims. A generative model is not intrinsically required to solve it. Paths that collide remain in the sample bank and the metrics.

@@ -10,4 +10,8 @@ Evidence: artifacts/evaluation.json; artifacts/verification.txt; docs/assets/sam
 
 Limitations: single training seed; sine-basis coefficient generation; point geometry; preset bank rather than live inference; no robotics feasibility claim.
 
-Next: publish and verify GitHub Pages plus CI.
+Published: https://github.com/RWLinno/trajectory-playground and https://rwlinno.github.io/trajectory-playground/ (HTTP 200 and browser checked).
+
+Portability: float64 sampling reduces accumulated ARM/x86 numerical differences. CI independently checks geometry, all sample banks and every held-out metric. Inspect the latest GitHub Actions run for the current commit.
+
+Maintenance: no hosted compute or background training is needed.

@@ -67,12 +67,12 @@ class Denoiser(nn.Module):
         super().__init__()
         self.net = nn.Sequential(nn.Linear(12, 96), nn.SiLU(), nn.Linear(96, 96), nn.SiLU(), nn.Linear(96, 1))
     def forward(self, x, t, c):
-        phase = t[:, None].float() / STEPS * torch.tensor([1., 2., 4., 8.], device=x.device) * np.pi
+        phase = t[:, None].to(x.dtype) / STEPS * torch.tensor([1., 2., 4., 8.], device=x.device, dtype=x.dtype) * np.pi
         return self.net(torch.cat([x, c, phase.sin(), phase.cos()], dim=1))
 
 
-def schedule():
-    f = torch.cos((torch.linspace(0, 1, STEPS + 1) + .008) / 1.008 * torch.pi / 2) ** 2
+def schedule(dtype=torch.float32):
+    f = torch.cos((torch.linspace(0, 1, STEPS + 1, dtype=dtype) + .008) / 1.008 * torch.pi / 2) ** 2
     beta = (1 - f[1:] / f[:-1]).clamp(.0001, .999)
     alpha = 1 - beta
     return beta, alpha, alpha.cumprod(0)
@@ -80,15 +80,16 @@ def schedule():
 
 @torch.no_grad()
 def sample(model, c, generator):
-    beta, alpha, abar = schedule()
-    x = torch.randn((len(c), 1), generator=generator)
+    dtype = next(model.parameters()).dtype
+    beta, alpha, abar = schedule(dtype)
+    x = torch.randn((len(c), 1), generator=generator, dtype=dtype)
     for step in reversed(range(STEPS)):
         t = torch.full((len(c),), step, dtype=torch.long)
         predicted = model(x, t, c)
         mean = (x - beta[step] / (1 - abar[step]).sqrt() * predicted) / alpha[step].sqrt()
         if step:
             posterior = beta[step] * (1 - abar[step-1]) / (1 - abar[step])
-            x = mean + posterior.sqrt() * torch.randn(x.shape, generator=generator)
+            x = mean + posterior.sqrt() * torch.randn(x.shape, generator=generator, dtype=dtype)
         else:
             x = mean
     return x[:, 0].numpy()
@@ -127,6 +128,8 @@ def run(args):
     mlp.eval(); diffusion.eval()
     out = ROOT / 'artifacts'; out.mkdir(exist_ok=True)
     torch.save({'mlp': mlp.state_dict(), 'diffusion': diffusion.state_dict(), 'seed': args.seed, 'steps': args.steps}, out / 'models.pt')
+    # Float64 inference avoids amplified cross-platform float32 drift over 64 steps.
+    mlp.double(); diffusion.double()
     eval_rng = np.random.default_rng(20261014)
     heldout = conditions(eval_rng, 128)
     generator = torch.Generator().manual_seed(54321)
@@ -135,7 +138,7 @@ def run(args):
     # Nine published presets plus a separate 128-condition evaluation.
     presets = [(r, cx, s) for r in [.18, .25, .32] for cx, s in [(-.18, -.2), (0., 0.), (.18, .2)]]
     for i, cond in enumerate(list(presets) + list(heldout)):
-        cc = torch.tensor(np.tile(cond, (64, 1)), dtype=torch.float32)
+        cc = torch.tensor(np.tile(cond, (64, 1)), dtype=torch.float64)
         with torch.no_grad(): ma = mlp(cc)[:, 0].numpy()
         da = sample(diffusion, cc, generator)
         ra = reference_amplitudes(eval_rng, np.tile(cond, (64, 1)))
@@ -152,7 +155,7 @@ def run(args):
         summary[name] = {key: float(np.mean([r[key] for r in rows])) for key in ['valid_rate','collision_rate','valid_modes','mean_length']}
     metadata = {'seed': args.seed, 'training_steps': args.steps, 'training_conditions': 4096, 'training_examples':8192,
                 'evaluation_seed': 54321, 'test_conditions':128, 'samples_per_condition':64,
-                'diffusion_steps':STEPS, 'torch':torch.__version__, 'numpy':np.__version__,
+                'inference_dtype':'float64', 'diffusion_steps':STEPS, 'torch':torch.__version__, 'numpy':np.__version__,
                 'seconds':round(time.time()-start, 2), 'source_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
                 'weights_sha256':hashlib.sha256((out/'models.pt').read_bytes()).hexdigest()}
     report = {'metadata':metadata, 'summary':summary, 'per_condition':all_rows, 'training_trace':trace}

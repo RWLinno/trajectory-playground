@@ -17,13 +17,13 @@ for key,file in [('source_sha256','src/experiment.py'),('weights_sha256','artifa
 checkpoint=torch.load(ROOT/'artifacts/models.pt',map_location='cpu',weights_only=True)
 mlp,diffusion=Regressor(),Denoiser()
 mlp.load_state_dict(checkpoint['mlp']);diffusion.load_state_dict(checkpoint['diffusion'])
-mlp.eval();diffusion.eval()
+mlp.eval().double();diffusion.eval().double()
 rng=np.random.default_rng(20261014)
 heldout=conditions(rng,128)
 generator=torch.Generator().manual_seed(54321)
 rows={'mlp':[],'diffusion':[],'reference':[]}
 for i,c in enumerate([s['condition'] for s in bank['scenes']]+list(heldout)):
-    cc=torch.tensor(np.tile(c,(64,1)),dtype=torch.float32)
+    cc=torch.tensor(np.tile(c,(64,1)),dtype=torch.float64)
     with torch.no_grad(): ma=mlp(cc)[:,0].numpy()
     generated={'mlp':ma,'diffusion':sample(diffusion,cc,generator),'reference':reference_amplitudes(rng,np.tile(c,(64,1)))}
     for name,amplitudes in generated.items():
