@@ -182,7 +182,7 @@ $("play").addEventListener("click", () => {
   }
   frame = requestAnimationFrame(step);
 });
-fetch("assets/samples.json")
+fetch("assets/samples.json", { cache: "no-store" })
   .then((r) => {
     if (!r.ok) throw Error("sample bank unavailable");
     return r.json();
